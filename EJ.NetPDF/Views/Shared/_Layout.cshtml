@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+	<meta charset="utf-8">
+	<title>Dot</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <!-- theme meta -->
+  <meta name="theme-name" content="dot" />
+
+	<!-- ** CSS Plugins Needed for the Project ** -->
+
+	<!-- Bootstrap -->
+	<link rel="stylesheet" href="~/theme/plugins/bootstrap/bootstrap.min.css">
+	<!-- themefy-icon -->
+	<link rel="stylesheet" href="~/theme/plugins/themify-icons/themify-icons.css">
+	<!--Favicon-->
+	<link rel="icon" href="~/theme/images/favicon.png" type="image/x-icon">
+	<!-- fonts -->
+	<link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+	<!-- Main Stylesheet -->
+	<link href="~/theme/assets/style.css" rel="stylesheet" media="screen" asp-append-version="true"/>
+	<!-- Syncfusion ASP.NET Core controls styles -->
+	<link rel="stylesheet" href="https://cdn.syncfusion.com/ej2/28.1.33/fluent.css" />
+
+</head>
+
+<body>
+	<!-- header -->
+	<header class="banner overlay bg-cover" data-background="images/banner.jpg">
+		<nav class="navbar navbar-expand-md navbar-dark">
+			<div class="container">
+				<a class="navbar-brand px-2" href="#">Dot</a>
+				<button class="navbar-toggler border-0" type="button" data-toggle="collapse" data-target="#navigation"
+					aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+
+				<div class="collapse navbar-collapse text-center" id="navigation">
+					<ul class="navbar-nav ml-auto">
+						<li class="nav-item">
+							<a class="nav-link text-dark" href="#">Home</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link text-dark" href="#">Faq</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link text-dark" href="#">contact</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link text-dark" href="#">Inner Page</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<!-- banner -->
+		<div class="container section">
+			<div class="row">
+				<div class="col-lg-8 text-center mx-auto">
+					<h1 class="text-white mb-3">Support Center &amp; Knowledge base</h1>
+					<p class="text-white mb-4">Find advice and answers from our support team fast or get in touch</p>
+					<div class="position-relative">
+						<input id="search" class="form-control" placeholder="Have a question? Just ask here or enter terms"><i
+							class="ti-search search-icon"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /banner -->
+	</header>
+	<!-- /header -->
+
+	@RenderBody()
+	
+	<!-- ** JS Plugins Needed for the Project ** -->
+	<!-- jquiry -->
+	<script src="~/theme/plugins/jquery/jquery-1.12.4.js"></script>
+	<!-- Bootstrap JS -->
+	<script src="~/theme/plugins/bootstrap/bootstrap.min.js"></script>
+	<!-- match-height JS -->
+	<script src="~/theme/plugins/match-height/jquery.matchHeight-min.js"></script>
+	<!-- Main Script -->
+	<script src="~/theme/assets/script.js"></script>
+	<!-- Syncfusion ASP.NET Core controls scripts -->
+	<script src="https://cdn.syncfusion.com/ej2/28.1.33/dist/ej2.min.js"></script>
+	<!-- Syncfusion ASP.NET Core Script Manager -->
+	<ejs-scripts></ejs-scripts>
+</body>
+
+</html>
