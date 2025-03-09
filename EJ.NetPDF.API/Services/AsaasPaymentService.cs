@@ -6,9 +6,12 @@ namespace EJ.NetPDF.API.Services;
 public class AsaasPaymentService : IPaymentService
 {
     private readonly ICustomerExternalRepository _customersRepository;
-    public AsaasPaymentService(ICustomerExternalRepository customersRepository)
+    private readonly IPaymentExternalRepository _paymentRepository;
+    public AsaasPaymentService(ICustomerExternalRepository customersRepository, 
+        IPaymentExternalRepository paymentRepository)
     {
         _customersRepository = customersRepository;
+        _paymentRepository = paymentRepository;
     }
     public async Task<IEnumerable<Customer>> GetCustomers()
     {
@@ -79,5 +82,19 @@ public class AsaasPaymentService : IPaymentService
         var result = await _customersRepository.DeleteCustomer(id);
         
         return result is { IsSuccessful: true, IsSuccessStatusCode: true };
+    }
+
+    public async Task<Payment> CreatePayment(AddPaymentModel addPayment)
+    {
+        try
+        {
+            var result = await _paymentRepository.CreatePayment(addPayment);
+
+            return result;
+        }
+        catch (ApiException e)
+        {
+            throw;
+        }
     }
 }

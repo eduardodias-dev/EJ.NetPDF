@@ -1,3 +1,4 @@
+using EJ.NetPDF.API.ApiRoutes;
 using EJ.NetPDF.API.Models;
 using EJ.NetPDF.API.Services;
 using Refit;
@@ -14,13 +15,18 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IPaymentService, AsaasPaymentService>();
 
+var httpClientConfigAction = (HttpClient client) =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Asaas:BaseAddress"]);
+    client.DefaultRequestHeaders.Add("accept", "application/json");
+    client.DefaultRequestHeaders.Add("access_token", builder.Configuration["Asaas:ApiKey"]);
+};
+
 builder.Services.AddRefitClient<ICustomerExternalRepository>()
-    .ConfigureHttpClient(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["Asaas:BaseAddress"]);
-        client.DefaultRequestHeaders.Add("accept", "application/json");
-        client.DefaultRequestHeaders.Add("access_token", builder.Configuration["Asaas:ApiKey"]);
-    });
+    .ConfigureHttpClient(httpClientConfigAction);
+
+builder.Services.AddRefitClient<IPaymentExternalRepository>()
+    .ConfigureHttpClient(httpClientConfigAction);
 
 var app = builder.Build();
 
@@ -33,41 +39,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var routeBuilder = app.MapGroup("api");
+app.MapGroup("api")
+    .MapCustomerEndpoints()
+    .MapPost("/payments", async (IPaymentService paymentService, AddPaymentModel paymentData) =>
+    {
+        var result = await paymentService.CreatePayment(paymentData);
 
-routeBuilder.MapGet("/customers", async (IPaymentService paymentService) => {
-    var result = await paymentService.GetCustomers();
-    
-    return Results.Ok(result);
-});
-
-routeBuilder.MapGet("/customers/{id}", async (IPaymentService paymentService, string id) =>
-{
-    var result = await paymentService.GetCustomer(id);
-    
-    return Results.Ok(result);
-});
-
-routeBuilder.MapPost("/customers", async (IPaymentService paymentService, AddCustomerModel customer) =>
-{
-    var result = await paymentService.CreateCustomer(customer);
-    
-    return Results.Created($"/customers/{result.Id}", result);
-});
-
-routeBuilder.MapPut("/customers/{id}", async (IPaymentService paymentService, string id, UpdateCustomerModel customer) =>
-{
-        _ = await paymentService.UpdateCustomer(customer);
-        
-        return Results.NoContent(); 
-});
-
-routeBuilder.MapDelete("/customer/{id}", async (IPaymentService paymentService, string id) =>
-{
-    bool result = await paymentService.DeleteCustomer(id);
-    
-    return result ? Results.NoContent() : Results.NotFound();
-});
+        return Results.Ok(result);
+    }).WithTags("Payments");
 
 
 app.UseExceptionHandler(app => 

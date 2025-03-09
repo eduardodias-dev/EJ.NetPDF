@@ -10,4 +10,5 @@ public interface IPaymentService
     Task<Customer> CreateCustomer(AddCustomerModel addCustomer);
     Task<Customer> UpdateCustomer(UpdateCustomerModel updateCustomer);
     Task<bool> DeleteCustomer(string id);
+    Task<Payment> CreatePayment(AddPaymentModel addPayment);
 }
