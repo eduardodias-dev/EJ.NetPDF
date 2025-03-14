@@ -1,7 +1,7 @@
 using EJ.NetPDF.API.Models;
 using Refit;
 
-namespace EJ.NetPDF.API.Services;
+namespace EJ.NetPDF.API.Services.ExternalRepositories;
 
 public interface IPaymentExternalRepository
 {

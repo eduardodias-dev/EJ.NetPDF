@@ -1,4 +1,5 @@
 using EJ.NetPDF.API.Models;
+using EJ.NetPDF.API.Services.ExternalRepositories;
 using Refit;
 
 namespace EJ.NetPDF.API.Services;

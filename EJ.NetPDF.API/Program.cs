@@ -1,6 +1,9 @@
 using EJ.NetPDF.API.ApiRoutes;
+using EJ.NetPDF.API.Data;
+using EJ.NetPDF.API.Data.Interfaces;
 using EJ.NetPDF.API.Models;
 using EJ.NetPDF.API.Services;
+using EJ.NetPDF.API.Services.ExternalRepositories;
 using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IPaymentService, AsaasPaymentService>();
+builder.Services.AddScoped<IRepository<Product>, MongoRepository<Product>>();
 
 var httpClientConfigAction = (HttpClient client) =>
 {
@@ -40,7 +44,12 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapGroup("api")
-    .MapCustomerEndpoints()
+    .MapCustomerEndpoints();
+
+app.MapGroup("api")
+    .MapProductEndpoints();
+
+app.MapGroup("api")
     .MapPost("/payments", async (IPaymentService paymentService, AddPaymentModel paymentData) =>
     {
         var result = await paymentService.CreatePayment(paymentData);
