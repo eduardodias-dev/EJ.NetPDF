@@ -10,14 +10,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Configuration.AddUserSecrets<Program>();
-
-builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IPaymentService, AsaasPaymentService>();
 builder.Services.AddScoped<IRepository<Product>, MongoRepository<Product>>();
+builder.Services.AddScoped<IRepository<Order>, MongoRepository<Order>>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 var httpClientConfigAction = (HttpClient client) =>
 {
@@ -50,13 +50,7 @@ app.MapGroup("api")
     .MapProductEndpoints();
 
 app.MapGroup("api")
-    .MapPost("/payments", async (IPaymentService paymentService, AddPaymentModel paymentData) =>
-    {
-        var result = await paymentService.CreatePayment(paymentData);
-
-        return Results.Ok(result);
-    }).WithTags("Payments");
-
+    .MapOrderEndpoints();
 
 app.UseExceptionHandler(app => 
     app.Run(async ctx => await Results.Problem().ExecuteAsync(ctx)

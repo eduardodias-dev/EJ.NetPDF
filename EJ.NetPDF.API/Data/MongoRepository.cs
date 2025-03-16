@@ -40,13 +40,15 @@ public class MongoRepository<T> : IRepository<T> where T : Entity
         return db.GetCollection<T>(_collectionName);
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync()
+    public async Task<IEnumerable<T>> GetAllAsync(int offset = 1, int limit = 10)
     {
         var collection = GetCollection();
         
-        var data = collection.FindAsync<T>(Builders<T>.Filter.Empty);
-        
-        return await data.Result.ToListAsync();
+        return await collection.Find(x => true)
+            .SortBy(x => x.Id)
+            .Skip(offset * limit)
+            .Limit(limit)
+            .ToListAsync();
     }
 
     public async Task AddAsync(T entity)

@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using EJ.NetPDF.API.Data.Interfaces;
 using EJ.NetPDF.API.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EJ.NetPDF.API.ApiRoutes;
 
@@ -18,6 +20,14 @@ public static class ProductApi
             return Results.Created($"/{product.Id}", product);
         });
 
+        routeBuilder.MapGet("", async (IRepository<Product> repository, 
+            [FromQuery] int offset = 0, [FromQuery] int limit = 10) =>
+        {
+            var data = await repository.GetAllAsync(offset, limit);
+            
+            return Results.Ok(data);
+        });
+        
         routeBuilder.MapGet("/{id:guid}", async (IRepository<Product> repo, Guid id) =>
         {
             var data = await repo.GetByIdAsync(id);
@@ -52,5 +62,17 @@ public static class ProductApi
         routeBuilder.WithTags("Products");
         
         return routeBuilder;
+    }
+}
+
+public class PaginationFilter
+{
+    public int Offset { get; }
+    public int Limit { get; }
+
+    public PaginationFilter()
+    {
+        Offset = 1;
+        Limit = 10;
     }
 }
