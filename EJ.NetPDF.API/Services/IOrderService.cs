@@ -5,4 +5,5 @@ namespace EJ.NetPDF.API.Services;
 public interface IOrderService
 {
     Task<Order> CreateOrder(CreateOrderModel model);
+    Task<OrderModel> GetOrderById(Guid id);
 }

@@ -5,6 +5,7 @@ using EJ.NetPDF.API.Models;
 using EJ.NetPDF.API.Services;
 using EJ.NetPDF.API.Services.ExternalRepositories;
 using Refit;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,8 @@ builder.Configuration.AddUserSecrets<Program>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSerilog(cfg =>
+    cfg.ReadFrom.Configuration(builder.Configuration));
 
 builder.Services.AddScoped<IPaymentService, AsaasPaymentService>();
 builder.Services.AddScoped<IRepository<Product>, MongoRepository<Product>>();
@@ -33,6 +36,9 @@ builder.Services.AddRefitClient<IPaymentExternalRepository>()
     .ConfigureHttpClient(httpClientConfigAction);
 
 var app = builder.Build();
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Starting web api...");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

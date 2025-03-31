@@ -19,9 +19,9 @@ public static class OrderApi
             return Results.Created($"/{result.Id}", result);
         });
 
-        routeBuilder.MapGet("/orders/{id:guid}", async (IRepository<Order> repo, Guid id) =>
+        routeBuilder.MapGet("/orders/{id:guid}", async (IOrderService service, Guid id) =>
         {
-            var result = await repo.GetByIdAsync(id);
+            var result = await service.GetOrderById(id);
             
             return Results.Ok(result);
         });

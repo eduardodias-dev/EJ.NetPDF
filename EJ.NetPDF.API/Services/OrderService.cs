@@ -13,12 +13,13 @@ public class OrderService : IOrderService
     private readonly IRepository<Product> _productRepo;
 
     public OrderService(IPaymentExternalRepository paymentExternalRepository, 
-        IRepository<Order> repo, ICustomerExternalRepository customerExternalRepository, IRepository<Product> productRepo)
+        IRepository<Order> repo, IRepository<Product> productRepo, 
+        ICustomerExternalRepository customerExternalRepository)
     {
         _paymentExternalRepository = paymentExternalRepository;
         _repo = repo;
-        _customerExternalRepository = customerExternalRepository;
         _productRepo = productRepo;
+        _customerExternalRepository = customerExternalRepository;
     }
 
     public async Task<Order> CreateOrder(CreateOrderModel model)
@@ -38,18 +39,40 @@ public class OrderService : IOrderService
         });
         
         var order = new Order(model.CustomerId!, items.ToList());
-        await _repo.AddAsync(order);
-        
         var description = GetDescription(order);
-        var addPaymentData = new AddPaymentModel(model.CustomerId!, model.PaymentType!, order.Total, dueDate, description);
-        var paymentData = await CreatePayment(addPaymentData);
         
-        order.SetPaymentId(paymentData.Id!);
+        var addPaymentData =
+            new AddPaymentModel(model.CustomerId!, model.PaymentType!, order.Total, dueDate, description);
+        var addOrderTask = _repo.AddAsync(order);
+        var createPaymentTask = CreatePayment(addPaymentData);
+        
+        order.SetPaymentId((await createPaymentTask).Id!);
         order.Process();
         
+        await addOrderTask; //ensure insertion before updating it
         await _repo.UpdateAsync(order);
         
         return order;
+    }
+
+    public async Task<OrderModel> GetOrderById(Guid id)
+    {
+        var order = await _repo.GetByIdAsync(id);
+        var paymentTask = _paymentExternalRepository.GetPayment(order.PaymentId!.ToString());
+        var customerTask = _customerExternalRepository.GetCustomer(order.CustomerId!.ToString());
+        var items = order.Items.Select(x => new OrderItemModel
+        {
+            Amount = x.Amount,
+            ProductId = x.Product?.Id ?? Guid.Empty,
+        });
+
+        return new OrderModel
+        {
+            PaymentData = await paymentTask,
+            CustomerData = await customerTask,
+            Items = items.ToList(),
+            Status = order.Status.ToString(),
+        };
     }
 
     private async Task<Payment> CreatePayment(AddPaymentModel paymentData)
@@ -70,13 +93,12 @@ public class OrderService : IOrderService
 
     private string GetDescription(Order order)
     {
-        var description = $"Order {order.Id}";
-        description += Environment.NewLine;
-        description += "Items:";
-        description += Environment.NewLine;
+        var description = "";
+        
         foreach (var item in order.Items)
         {
-            description += $"{item.Product!.Name}";
+            description += $"{item.Product!.Description}";
+            description += Environment.NewLine;
         }
         
         return description;

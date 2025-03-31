@@ -7,7 +7,7 @@ public class Order : Entity
     public OrderStatus Status { get; private set; }
     public ICollection<OrderItem> Items { get; private set; }
     
-    public decimal Total => Items?.Sum(i => i.Product?.Price ?? 0) ?? 0;
+    public decimal Total => Items?.Sum(i => i.Amount * (i.Product?.Price ?? 0)) ?? 0;
     
     public Order(string customerId, 
         ICollection<OrderItem> items)

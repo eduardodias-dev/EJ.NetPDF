@@ -59,7 +59,7 @@ public class AsaasPaymentService : IPaymentService
 
     public async Task<Customer> UpdateCustomer(UpdateCustomerModel updateCustomer)
     {
-        var existingCustomer = _customersRepository.GetCustomer(updateCustomer.Id!);
+        var existingCustomer = await _customersRepository.GetCustomer(updateCustomer.Id!);
         if (existingCustomer == null)
         {
             throw new InvalidOperationException("Customer was not found.");

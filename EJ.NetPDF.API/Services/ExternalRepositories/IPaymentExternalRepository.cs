@@ -7,4 +7,7 @@ public interface IPaymentExternalRepository
 {
     [Post("/payments")]
     Task<Payment> CreatePayment([Body] AddPaymentModel payment);
+    
+    [Get("/payments/{id}")]
+    Task<Payment> GetPayment(string id);
 }
