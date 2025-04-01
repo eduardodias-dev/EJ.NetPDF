@@ -11,40 +11,35 @@ public class OrderService : IOrderService
     private readonly ICustomerExternalRepository _customerExternalRepository;
     private readonly IRepository<Order> _repo;
     private readonly IRepository<Product> _productRepo;
+    private readonly ILogger<OrderService> _logger;
 
     public OrderService(IPaymentExternalRepository paymentExternalRepository, 
         IRepository<Order> repo, IRepository<Product> productRepo, 
-        ICustomerExternalRepository customerExternalRepository)
+        ICustomerExternalRepository customerExternalRepository, 
+        ILogger<OrderService> logger)
     {
         _paymentExternalRepository = paymentExternalRepository;
         _repo = repo;
         _productRepo = productRepo;
         _customerExternalRepository = customerExternalRepository;
+        _logger = logger;
     }
 
     public async Task<Order> CreateOrder(CreateOrderModel model)
     {
-        if (model is null)
-        {
-            throw new ArgumentNullException(nameof(model));
-        }
-        
+        ArgumentNullException.ThrowIfNull(model);
+
         var dueDate = GetDueDate();
         var products = await _productRepo.GetAllAsync(0, 100);
-        var items = model.Items.Select(x => new OrderItem()
-        {
-            Id = Guid.NewGuid(),
-            Amount = x.Amount,
-            Product = products.FirstOrDefault(p => p.Id == x.ProductId) ?? throw new InvalidOperationException($"Product {x.ProductId} not found."),
-        });
-        
-        var order = new Order(model.CustomerId!, items.ToList());
+        var product = products.FirstOrDefault(p => p.Id == model.ProductId) ??
+                      throw new InvalidOperationException($"Product {model.ProductId} not found.");
+        var order = new Order(model.CustomerId!, product);
         var description = GetDescription(order);
+        var addSubscriptionModel =
+            new AddSubscriptionModel(model.CustomerId!, model.PaymentType!, order.Total, dueDate, product.Cycle!, description);
         
-        var addPaymentData =
-            new AddPaymentModel(model.CustomerId!, model.PaymentType!, order.Total, dueDate, description);
         var addOrderTask = _repo.AddAsync(order);
-        var createPaymentTask = CreatePayment(addPaymentData);
+        var createPaymentTask = CreateSubscription(addSubscriptionModel);
         
         order.SetPaymentId((await createPaymentTask).Id!);
         order.Process();
@@ -58,54 +53,44 @@ public class OrderService : IOrderService
     public async Task<OrderModel> GetOrderById(Guid id)
     {
         var order = await _repo.GetByIdAsync(id);
-        var paymentTask = _paymentExternalRepository.GetPayment(order.PaymentId!.ToString());
-        var customerTask = _customerExternalRepository.GetCustomer(order.CustomerId!.ToString());
-        var items = order.Items.Select(x => new OrderItemModel
-        {
-            Amount = x.Amount,
-            ProductId = x.Product?.Id ?? Guid.Empty,
-        });
-
+        var subscriptionTask = _paymentExternalRepository.GetSubscription(order.PaymentId!);
+        var paymentsTask = _paymentExternalRepository.GetSubscriptionPayments(order.PaymentId!);
+        var customerTask = _customerExternalRepository.GetCustomer(order.CustomerId!);
+        
+        var subscriptionData = await subscriptionTask;
+        subscriptionData.Payments = (await paymentsTask).Data;
+        
         return new OrderModel
         {
-            PaymentData = await paymentTask,
+            SubscriptionData = subscriptionData,
             CustomerData = await customerTask,
-            Items = items.ToList(),
+            Product = new ProductModel(order.Product.Id, order.Product.Name!, order.Product.Description!, order.Product.Price!, order.Product.Cycle!),
             Status = order.Status.ToString(),
         };
     }
 
-    private async Task<Payment> CreatePayment(AddPaymentModel paymentData)
+    private async Task<Subscription> CreateSubscription(AddSubscriptionModel subscriptionData)
     {
         try
         {
-            var payment = await _paymentExternalRepository.CreatePayment(paymentData);
+            var subscription = await _paymentExternalRepository.CreateSubscription(subscriptionData);
             
-            return payment;
+            return subscription;
         }
         catch (ApiException ex)
         {
-            //Log ApiExceptions
-            
+            _logger.LogError(ex, "Error while adding subscription.");
             throw;
         }
     }
 
-    private string GetDescription(Order order)
+    private static string GetDescription(Order order)
     {
-        var description = "";
-        
-        foreach (var item in order.Items)
-        {
-            description += $"{item.Product!.Description}";
-            description += Environment.NewLine;
-        }
-        
-        return description;
+        return $"{order.Product!.Description}";
     }
 
-    private DateTime GetDueDate()
+    private static DateTime GetDueDate()
     {
-        return DateTime.Today;
+        return DateTime.Today.AddDays(5);
     }
 }

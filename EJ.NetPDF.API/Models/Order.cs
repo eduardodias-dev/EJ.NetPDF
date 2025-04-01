@@ -5,17 +5,14 @@ public class Order : Entity
     public string? PaymentId { get; private set; }
     public string? CustomerId { get; private set; }
     public OrderStatus Status { get; private set; }
-    public ICollection<OrderItem> Items { get; private set; }
+    public Product Product { get; private set; }
     
-    public decimal Total => Items?.Sum(i => i.Amount * (i.Product?.Price ?? 0)) ?? 0;
+    public decimal Total => Product.Price;
     
-    public Order(string customerId, 
-        ICollection<OrderItem> items)
+    public Order(string customerId, Product product)
     {
         CustomerId = customerId;
-        
-        Items = items;
-     
+        Product = product;
         Status = OrderStatus.Created;
     }
 
@@ -67,14 +64,6 @@ public class Order : Entity
         }
         
         Status = OrderStatus.Completed;
-    }
-
-    public void AddItems(IEnumerable<OrderItem> items)
-    {
-        foreach (var item in items)
-        {
-            Items.Add(item);
-        }
     }
 
     public void SetPaymentId(string paymentId)

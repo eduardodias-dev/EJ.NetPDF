@@ -11,12 +11,19 @@ public static class ProductApi
     {
         var routeBuilder = endpoints.MapGroup("/products");
         
-        routeBuilder.MapPost("/", async (IRepository<Product> repo, Product product) =>
+        routeBuilder.MapPost("/", async (IRepository<Product> repo, ProductModel productModel) =>
         {
-            if (product?.Name is null || product?.Price is null) return Results.UnprocessableEntity();
+            if (productModel?.Name is null || productModel?.Price is null) return Results.UnprocessableEntity();
 
-            await repo.AddAsync(product);
+            var product = new Product()
+            {
+                Name = productModel.Name,
+                Cycle = productModel.Cycle,
+                Price = productModel.Price,
+                Description = productModel.Description
+            };
             
+            await repo.AddAsync(product);
             return Results.Created($"/{product.Id}", product);
         });
 
@@ -25,7 +32,9 @@ public static class ProductApi
         {
             var data = await repository.GetAllAsync(offset, limit);
             
-            return Results.Ok(data);
+            var result = data.Select(x => new ProductModel(x.Id, x.Name!, x.Description!, x.Price, x.Cycle!));
+            
+            return Results.Ok(result);
         });
         
         routeBuilder.MapGet("/{id:guid}", async (IRepository<Product> repo, Guid id) =>
@@ -33,15 +42,26 @@ public static class ProductApi
             var data = await repo.GetByIdAsync(id);
 
             if (data == null) return Results.NotFound();
+
+            var productModel = new ProductModel(data.Id, data.Name!, data.Description!, data.Price, data.Cycle!);
             
-            return Results.Ok(data);
+            return Results.Ok(productModel);
         });
 
-        routeBuilder.MapPut("/{id:guid}", async (IRepository<Product> repo, Guid id, Product product) =>
+        routeBuilder.MapPut("/{id:guid}", async (IRepository<Product> repo, Guid id, ProductModel productModel) =>
         {
-            if (product is null) return Results.UnprocessableEntity();
+            if (productModel is null) return Results.UnprocessableEntity();
             
-            if (id != product?.Id) return Results.BadRequest();
+            if (id != productModel?.Id) return Results.BadRequest();
+            
+            var product = new Product()
+            {
+                Id = productModel.Id.GetValueOrDefault(),
+                Name = productModel.Name,
+                Cycle = productModel.Cycle,
+                Price = productModel.Price,
+                Description = productModel.Description
+            };
             
             await repo.UpdateAsync(product);
             

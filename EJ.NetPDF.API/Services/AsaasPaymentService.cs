@@ -8,11 +8,14 @@ public class AsaasPaymentService : IPaymentService
 {
     private readonly ICustomerExternalRepository _customersRepository;
     private readonly IPaymentExternalRepository _paymentRepository;
+    private readonly ILogger<AsaasPaymentService> _logger;
+    
     public AsaasPaymentService(ICustomerExternalRepository customersRepository, 
-        IPaymentExternalRepository paymentRepository)
+        IPaymentExternalRepository paymentRepository, ILogger<AsaasPaymentService> logger)
     {
         _customersRepository = customersRepository;
         _paymentRepository = paymentRepository;
+        _logger = logger;
     }
     public async Task<IEnumerable<Customer>> GetCustomers()
     {
@@ -31,7 +34,7 @@ public class AsaasPaymentService : IPaymentService
         }
         catch (ApiException e)
         {
-            //Log
+            _logger.LogError(e, "An error occured while getting the customer.");
             throw;
         }
     }
@@ -52,7 +55,7 @@ public class AsaasPaymentService : IPaymentService
         }
         catch (ApiException e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "An error occured while creating the customer.");
             throw;
         }
     }
@@ -73,7 +76,7 @@ public class AsaasPaymentService : IPaymentService
         }
         catch (ApiException e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "An error occured while updating the customer.");
             throw;
         }
     }
@@ -95,6 +98,7 @@ public class AsaasPaymentService : IPaymentService
         }
         catch (ApiException e)
         {
+            _logger.LogError(e, "An error occured while creating the payment.");
             throw;
         }
     }
