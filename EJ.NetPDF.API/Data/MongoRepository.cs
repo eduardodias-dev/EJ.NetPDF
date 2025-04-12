@@ -40,13 +40,13 @@ public class MongoRepository<T> : IRepository<T> where T : Entity
         return db.GetCollection<T>(_collectionName);
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(int offset = 1, int limit = 10)
+    public async Task<IEnumerable<T>> GetAllAsync(int page = 1, int limit = 10)
     {
         var collection = GetCollection();
         
         return await collection.Find(x => true)
             .SortBy(x => x.Id)
-            .Skip(offset * limit)
+            .Skip(page * limit)
             .Limit(limit)
             .ToListAsync();
     }
