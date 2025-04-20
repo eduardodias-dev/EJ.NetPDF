@@ -88,17 +88,50 @@ public class AsaasPaymentService : IPaymentService
         return result is { IsSuccessful: true, IsSuccessStatusCode: true };
     }
 
-    public async Task<Payment> CreatePayment(AddPaymentModel addPayment)
+    public async Task<Subscription> CreateSubscription(AddSubscriptionModel subscriptionData)
     {
         try
         {
-            var result = await _paymentRepository.CreatePayment(addPayment);
-
-            return result;
+            var subscription = await _paymentRepository.CreateSubscription(subscriptionData);
+            
+            return subscription;
         }
-        catch (ApiException e)
+        catch (ApiException ex)
         {
-            _logger.LogError(e, "An error occured while creating the payment.");
+            _logger.LogError(ex, "Error while adding subscription.");
+            throw;
+        }
+    }
+
+    public async Task<Subscription> GetSubscriptionById(string id)
+    {
+        try
+        {
+            return await _paymentRepository.GetSubscription(id);
+        }
+        catch (ApiException ex)
+        {
+            _logger.LogError(ex, "An error occured while getting the subscription.");
+            return null;
+        }
+    }
+
+    public async Task<Payment[]> GetSubscriptionPayments(string subscriptionId)
+    {
+        try
+        {
+            var response = await _paymentRepository.GetSubscriptionPayments(subscriptionId);
+
+            return response.Data;
+        }
+        catch (ApiException ex)
+        {
+            _logger.LogError(ex, "An error occured while getting the subscription.");
+            throw;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "An error occured while getting the subscription.");
             throw;
         }
     }

@@ -8,6 +8,7 @@ public class Order : Entity
     public Product Product { get; private set; }
     
     public decimal Total => Product.Price;
+    public string Description => $"{Product!.Description}";
     
     public Order(string customerId, Product product)
     {
