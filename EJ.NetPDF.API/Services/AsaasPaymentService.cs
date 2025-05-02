@@ -112,7 +112,7 @@ public class AsaasPaymentService : IPaymentService
         catch (ApiException ex)
         {
             _logger.LogError(ex, "An error occured while getting the subscription.");
-            return null;
+            throw;
         }
     }
 

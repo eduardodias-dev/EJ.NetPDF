@@ -21,6 +21,8 @@ builder.Services.AddScoped<IPaymentService, AsaasPaymentService>();
 builder.Services.AddScoped<IRepository<Product>, MongoRepository<Product>>();
 builder.Services.AddScoped<IRepository<Order>, MongoRepository<Order>>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ISubscriptionFactory, SubscriptionFactory>();
+builder.Services.AddScoped<IOrderFactory, OrderFactory>();
 
 var httpClientConfigAction = (HttpClient client) =>
 {

@@ -9,21 +9,24 @@ public class OrderService : IOrderService
 {
     private readonly ICustomerExternalRepository _customerExternalRepository;
     private readonly IRepository<Order> _repo;
-    private readonly IRepository<Product> _productRepo;
     private readonly ILogger<OrderService> _logger;
     private readonly IPaymentService _paymentService;
+    private readonly ISubscriptionFactory _subscriptionFactory;
+    private readonly IOrderFactory _orderFactory;
 
     public OrderService(IRepository<Order> repo, 
-        IRepository<Product> productRepo, 
         ICustomerExternalRepository customerExternalRepository, 
         ILogger<OrderService> logger,
-        IPaymentService paymentService)
+        IPaymentService paymentService, 
+        ISubscriptionFactory subscriptionFactory, 
+        IOrderFactory orderFactory)
     {
         _repo = repo;
-        _productRepo = productRepo;
         _customerExternalRepository = customerExternalRepository;
         _logger = logger;
         _paymentService = paymentService;
+        _subscriptionFactory = subscriptionFactory;
+        _orderFactory = orderFactory;
     }
 
     public async Task<Order> CreateOrder(CreateOrderModel model)
@@ -31,16 +34,9 @@ public class OrderService : IOrderService
         try
         {
             ArgumentNullException.ThrowIfNull(model);
-            var dueDate = GetDueDate();
-            var product = await _productRepo.GetByIdAsync(model.ProductId.GetValueOrDefault());
-
-            if (product == null)
-                throw new InvalidOperationException($"Product {model.ProductId} not found.");
-
-            var order = new Order(model.CustomerId!, product);
-            var addSubscriptionModel =
-                new AddSubscriptionModel(model.CustomerId!, model.PaymentType!, order.Total,
-                    dueDate, product.Cycle!, order.Description);
+            
+            var order = await _orderFactory.CreateFromModelAsync(model);
+            var addSubscriptionModel = _subscriptionFactory.Create(order);
 
             var addOrderTask = _repo.AddAsync(order);
             var createPaymentTask = _paymentService.CreateSubscription(addSubscriptionModel);
@@ -74,13 +70,9 @@ public class OrderService : IOrderService
         {
             SubscriptionData = subscriptionData,
             CustomerData = await customerTask,
-            Product = new ProductModel(order.Product.Id, order.Product.Name!, order.Product.Description!, order.Product.Price!, order.Product.Cycle!),
+            Product = new ProductModel(order.Product.Id, order.Product.Name!, order.Product.Description!, 
+                order.Product.Price!, order.Product.Cycle!),
             Status = order.Status.ToString(),
         };
-    }
-
-    private static DateTime GetDueDate()
-    {
-        return DateTime.Today.AddDays(5);
     }
 }

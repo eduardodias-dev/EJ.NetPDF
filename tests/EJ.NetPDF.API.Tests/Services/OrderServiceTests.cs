@@ -15,20 +15,23 @@ public class OrderServiceTests
     private OrderService _sut;
     private ICustomerExternalRepository _customerExternalRepository;
     private IRepository<Order> _orderRepository;
-    private IRepository<Product> _productRepository;
     private ILogger<OrderService> _logger;
     private IPaymentService _paymentService; 
+    private ISubscriptionFactory _subscriptionFactory;
+    private IOrderFactory _orderFactory;
     
     [SetUp]
     public void Setup()
     {
         _customerExternalRepository = A.Fake<ICustomerExternalRepository>(x => x.Strict());
         _orderRepository = A.Fake<IRepository<Order>>(x => x.Strict());
-        _productRepository = A.Fake<IRepository<Product>>(x => x.Strict());
+        _subscriptionFactory = A.Fake<ISubscriptionFactory>(x => x.Strict());
+        _orderFactory = A.Fake<IOrderFactory>(x => x.Strict());
         _logger = new FakeLogger<OrderService>();
         _paymentService = A.Fake<IPaymentService>(x => x.Strict());
         
-        _sut = new OrderService(_orderRepository, _productRepository, _customerExternalRepository, _logger, _paymentService);
+        _sut = new OrderService(_orderRepository, _customerExternalRepository, _logger, _paymentService, 
+            _subscriptionFactory, _orderFactory);
     }
 
     [Test]
@@ -40,21 +43,6 @@ public class OrderServiceTests
         //Act/Assert
         Assert.That(async () => await _sut.CreateOrder(model), Throws.ArgumentNullException);
     }
-
-    [Test]
-    public void CreateOrder_ShouldThrowExceptionWhen_ProductHasInvalidId()
-    {
-        //Arrange
-        var guid = Guid.NewGuid();
-        var customerId = GenericStringGenerator.Generate(10);
-        var model = new CreateOrderModel(customerId, "PIX", guid);
-        
-        A.CallTo(() => _productRepository.GetByIdAsync(guid))
-            .Returns(Task.FromResult<Product>(null!));
-        
-        //Act/Assert
-        Assert.That(async () => await _sut.CreateOrder(model), Throws.InvalidOperationException);
-    }
     
     [Test]
     public async Task CreateOrder_ShouldCreateInPaymentServiceAndDatabase_WhenDataIsValid()
@@ -65,15 +53,20 @@ public class OrderServiceTests
         var model = new CreateOrderModel(customerId, "PIX", productId);
         var subscriptionId = GenericStringGenerator.Generate(10);
         
-        A.CallTo(() => _productRepository.GetByIdAsync(productId))
-            .Returns(Task.FromResult<Product>(new Product()
+        A.CallTo(() => _orderFactory.CreateFromModelAsync(model))
+            .Returns(Task.FromResult(new Order(model.CustomerId, model.PaymentType, new Product()
             {
                 Id = productId,
                 Description = "Generic Product Description",
                 Name = "Generic Product",
                 Cycle = "MONTHLY",
                 Price = 9.9M
-            }));
+            })));
+        
+        A.CallTo(() => _subscriptionFactory.Create(A<Order>.Ignored))
+            .Returns(new AddSubscriptionModel(customerId, "PIX", 9.9M,
+                DateTime.Today.AddDays(3),
+                "MONTHLY", default(string)));
         
         A.CallTo(() => _orderRepository.AddAsync(A<Order>.Ignored))
             .Returns(Task.CompletedTask);

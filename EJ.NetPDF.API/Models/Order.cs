@@ -4,15 +4,16 @@ public class Order : Entity
 {
     public string? PaymentId { get; private set; }
     public string? CustomerId { get; private set; }
+    public string? PaymentType { get; private set; }
     public OrderStatus Status { get; private set; }
     public Product Product { get; private set; }
-    
     public decimal Total => Product.Price;
     public string Description => $"{Product!.Description}";
     
-    public Order(string customerId, Product product)
+    public Order(string customerId, string paymentType, Product product)
     {
         CustomerId = customerId;
+        PaymentType = paymentType;
         Product = product;
         Status = OrderStatus.Created;
     }
