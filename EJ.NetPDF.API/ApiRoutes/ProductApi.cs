@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using EJ.NetPDF.API.Data.Interfaces;
 using EJ.NetPDF.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EJ.NetPDF.API.ApiRoutes;

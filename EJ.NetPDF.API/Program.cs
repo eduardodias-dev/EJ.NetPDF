@@ -1,46 +1,61 @@
 using EJ.NetPDF.API.ApiRoutes;
-using EJ.NetPDF.API.Data;
-using EJ.NetPDF.API.Data.Interfaces;
-using EJ.NetPDF.API.Models;
-using EJ.NetPDF.API.Services;
-using EJ.NetPDF.API.Services.ExternalRepositories;
-using Refit;
+using EJ.NetPDF.API.Extensions;
+using Keycloak.AuthServices.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Configuration.AddUserSecrets<Program>();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddKeycloakWebApi(builder.Configuration, options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            NameClaimType = "preferred_username",
+            ValidateAudience = false,
+            ValidateIssuer = true
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy => policy.RequireRole("admin"));
+});
+
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSerilog(cfg =>
     cfg.ReadFrom.Configuration(builder.Configuration));
 
-builder.Services.AddScoped<IPaymentService, AsaasPaymentService>();
-builder.Services.AddScoped<IRepository<Product>, MongoRepository<Product>>();
-builder.Services.AddScoped<IRepository<Order>, MongoRepository<Order>>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<ISubscriptionFactory, SubscriptionFactory>();
-builder.Services.AddScoped<IOrderFactory, OrderFactory>();
-
-var httpClientConfigAction = (HttpClient client) =>
+builder.Services.AddInternalServices();
+builder.Services.AddRefitConfiguration(builder.Configuration);
+builder.Services.AddCors(o => o.AddDefaultPolicy(b =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Asaas:BaseAddress"]);
-    client.DefaultRequestHeaders.Add("accept", "application/json");
-    client.DefaultRequestHeaders.Add("access_token", builder.Configuration["Asaas:ApiKey"]);
-};
+    var allowedOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? throw new InvalidOperationException("Invalid Cors Configuration.");
 
-builder.Services.AddRefitClient<ICustomerExternalRepository>()
-    .ConfigureHttpClient(httpClientConfigAction);
+    var allowedMethods = builder.Configuration
+        .GetSection("Cors:AllowedMethods")
+        .Get<string[]>() ?? throw new InvalidOperationException("Invalid Cors Configuration.");
 
-builder.Services.AddRefitClient<IPaymentExternalRepository>()
-    .ConfigureHttpClient(httpClientConfigAction);
+    b.WithOrigins(allowedOrigins);
+    b.WithMethods(allowedMethods);
+    b.AllowAnyHeader();
+}));
 
 var app = builder.Build();
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Starting web api...");
+
+app.UseCors();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -52,16 +67,17 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapGroup("api")
-    .MapCustomerEndpoints();
+    .MapCustomerEndpoints();  
 
 app.MapGroup("api")
     .MapProductEndpoints();
 
 app.MapGroup("api")
-    .MapOrderEndpoints();
+    .MapOrderEndpoints()
+    .RequireAuthorization();
 
-app.UseExceptionHandler(app => 
-    app.Run(async ctx => await Results.Problem().ExecuteAsync(ctx)
+app.UseExceptionHandler(b => 
+    b.Run(async ctx => await Results.Problem().ExecuteAsync(ctx)
 ));
 
 app.Run();

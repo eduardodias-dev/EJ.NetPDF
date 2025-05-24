@@ -1,5 +1,6 @@
 using EJ.NetPDF.API.Models;
 using EJ.NetPDF.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EJ.NetPDF.API.ApiRoutes;
 
@@ -7,13 +8,13 @@ public static class CustomerApi
 {
     public static RouteGroupBuilder MapCustomerEndpoints(this IEndpointRouteBuilder app)
     {
-        var routeBuilder = app.MapGroup("/customers");
+        var routeBuilder = app.MapGroup("/customers")
+            .RequireAuthorization("Admin");
         
-        routeBuilder.MapGet("/", async (IPaymentService paymentService) => {
-                var result = await paymentService.GetCustomers();
-    
-                return Results.Ok(result);
-            });
+        routeBuilder.MapGet("/", async (HttpContext ctx, IPaymentService paymentService) => {
+            var result = await paymentService.GetCustomers();
+            return Results.Ok(result);
+        });
         
         routeBuilder.MapGet("/{id}", async (IPaymentService paymentService, string id) =>
         {

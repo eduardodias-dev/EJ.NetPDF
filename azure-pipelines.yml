@@ -1,0 +1,7 @@
+trigger:
+  - release/*
+    
+pool:
+  vmImage: 'ubuntu-latest'
+  
+stages:
