@@ -66,6 +66,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.MapGet("/", () => "API Online");
+
 app.MapGroup("api")
     .MapCustomerEndpoints();  
 

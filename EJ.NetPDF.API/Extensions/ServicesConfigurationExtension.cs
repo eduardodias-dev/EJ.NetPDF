@@ -12,7 +12,7 @@ public static class ServicesConfigurationExtension
         
         services.AddScoped<IPaymentService, AsaasPaymentService>();
         services.AddScoped<IRepository<Product>, MongoRepository<Product>>();
-        services.AddScoped<IRepository<Order>, MongoRepository<Order>>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ISubscriptionFactory, SubscriptionFactory>();
         services.AddScoped<IOrderFactory, OrderFactory>();

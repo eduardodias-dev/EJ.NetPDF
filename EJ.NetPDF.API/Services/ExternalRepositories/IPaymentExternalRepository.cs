@@ -1,3 +1,4 @@
+using EJ.NetPDF.API.DTOs;
 using EJ.NetPDF.API.Models;
 using Refit;
 
@@ -18,5 +19,5 @@ public interface IPaymentExternalRepository
     Task<Subscription> GetSubscription(string id);
     
     [Get("/subscriptions/{id}/payments")]
-    Task<AsaasResponseDTO<Payment[]>> GetSubscriptionPayments(string id);
+    Task<AsaasResponseDto<Payment[]>> GetSubscriptionPayments(string id);
 }

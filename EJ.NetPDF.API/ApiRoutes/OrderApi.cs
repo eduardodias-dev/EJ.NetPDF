@@ -19,9 +19,16 @@ public static class OrderApi
             return Results.Created($"/{result.Id}", result);
         });
 
-        routeBuilder.MapGet("/orders/{id:guid}", async (IOrderService service, Guid id) =>
+        routeBuilder.MapGet("/{id:guid}", async (IOrderService service, Guid id) =>
         {
             var result = await service.GetOrderById(id);
+            
+            return Results.Ok(result);
+        });
+
+        routeBuilder.MapGet("/customer/{customerId}", async (IOrderService service, string customerId) =>
+        {
+            var result = await service.GetOrdersByCustomerId(customerId);
             
             return Results.Ok(result);
         });

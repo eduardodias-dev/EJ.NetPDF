@@ -1,6 +1,5 @@
 using EJ.NetPDF.API.Data.Interfaces;
 using EJ.NetPDF.API.Models;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace EJ.NetPDF.API.Data;
@@ -33,7 +32,7 @@ public class MongoRepository<T> : IRepository<T> where T : Entity
         return data.FirstOrDefault();
     }
 
-    private IMongoCollection<T> GetCollection()
+    protected IMongoCollection<T> GetCollection()
     {
         var db = GetDatabase();
 

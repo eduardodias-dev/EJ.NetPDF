@@ -8,13 +8,13 @@ namespace EJ.NetPDF.API.Services;
 public class OrderService : IOrderService
 {
     private readonly ICustomerExternalRepository _customerExternalRepository;
-    private readonly IRepository<Order> _repo;
+    private readonly IOrderRepository _repo;
     private readonly ILogger<OrderService> _logger;
     private readonly IPaymentService _paymentService;
     private readonly ISubscriptionFactory _subscriptionFactory;
     private readonly IOrderFactory _orderFactory;
 
-    public OrderService(IRepository<Order> repo, 
+    public OrderService(IOrderRepository repo, 
         ICustomerExternalRepository customerExternalRepository, 
         ILogger<OrderService> logger,
         IPaymentService paymentService, 
@@ -68,11 +68,33 @@ public class OrderService : IOrderService
         
         return new OrderModel
         {
+            Id = order.Id,
             SubscriptionData = subscriptionData,
             CustomerData = await customerTask,
             Product = new ProductModel(order.Product.Id, order.Product.Name!, order.Product.Description!, 
                 order.Product.Price!, order.Product.Cycle!),
             Status = order.Status.ToString(),
         };
+    }
+
+    public async Task<OrderModel[]> GetOrdersByCustomerId(string customerId)
+    {
+        var data = await _repo.GetOrdersByCustomerId(customerId);
+        
+        var subscriptionTasks = data.Select(x => _paymentService.GetSubscriptionById(x.PaymentId!)).ToArray();
+        var customerTasks = data.Select(x => _customerExternalRepository.GetCustomer(x.CustomerId!));
+        
+        var subscriptions = await Task.WhenAll(subscriptionTasks);
+        var customers = await Task.WhenAll(customerTasks);
+        
+        return data.Select(o => new OrderModel
+        {
+            Id = o.Id,
+            SubscriptionData = subscriptions.FirstOrDefault(s => s.Id == o.PaymentId),
+            CustomerData = customers.FirstOrDefault(c => c.Id == o.CustomerId),
+            Product = new ProductModel(o.Product.Id, o.Product.Name!, o.Product.Description!, 
+                o.Product.Price!, o.Product.Cycle!),
+            Status = o.Status.ToString(),
+        }).ToArray();
     }
 }

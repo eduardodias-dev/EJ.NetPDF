@@ -1,3 +1,4 @@
+using EJ.NetPDF.API.DTOs;
 using EJ.NetPDF.API.Models;
 using Refit;
 
@@ -6,7 +7,7 @@ namespace EJ.NetPDF.API.Services.ExternalRepositories;
 public interface ICustomerExternalRepository
 {
     [Get("/customers")]
-    Task<AsaasResponseDTO<Customer[]>> GetCustomers([Query] string cpfCnpj = null);
+    Task<AsaasResponseDto<Customer[]>> GetCustomers([Query] string cpfCnpj = null);
 
     [Get("/customers/{id}")]
     Task<Customer> GetCustomer(string id);
